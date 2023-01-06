@@ -230,14 +230,38 @@ class Scraper:
             'verdicts': verdicts
         }
         
+    # TODO: Test method once request is not blocked 
+    def africacheck_extract_claim(self, element_id):
+        """
+        returns a list of claims
+        """
+        claim_list = []
+        html_obj = self.get_html_obj()
+        claims = html_obj.find(element_id)
+        for claim in claims:
+            claim_list.append(claim.text)
+        return claim_list
+    
+    
+    # TODO: Test method once request is not blocked 
+    def africacheck_extract_verdicts(html_obj):
+        a_verdict = {}
+        rating = html_obj.find('.field--has-rating', first=True).text
+        
+        verdicts = html_obj.find('.article-details__verdict')
+            
+        a_verdict[rating] = 'False'
+        return a_verdict
+    
+        
     def africacheck_scrape(self):
         html_obj = self.get_html_obj()
-        title = self.extract_element_text('.post-title')
-        author = self.extract_element_text('.post-comment')
-        page_date = self.extract_element_text('.post-date')
-        page_banner = self.extract_element_src('.post-image img')
-        claim = self.thecable_extract_claim('.tdb-block-inner p strong')
-        verdicts = self.thecable_extract_verdicts()
+        title = self.extract_element_text('.page-title')
+        author = self.extract_element_text('.author-details a h4')
+        page_date = self.extract_element_text('.published')
+        page_banner = self.extract_element_src('.hero__image picture img')
+        claim = self.africacheck_extract_claim('.field--name-field-claims')
+        verdicts = self.africacheck_extract_verdicts()
         return {
             'title': title,
             'author': author,
