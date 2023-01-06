@@ -26,22 +26,22 @@ class Scraper:
     endless_scroll_time: int = 5
     driver: WebDriver = None
     html_obj: HTML = None
-    
-    
+
     def __post_init__(self):
         if self.page_title and self.site_name == 'dubawa':
             self.url = f'https://dubawa.org/{slugify(self.page_title)}'
-            
+
+        if self.page_title and self.site_name == 'africacheck':
+            self.url = f'https://africacheck.org/fact-checks/reports/{slugify(self.page_title)}'
+
+        if self.page_title and self.site_name == 'thecable':
+            self.url = f'https://www.thecable.ng/{slugify(self.page_title)}'
+
+        if self.page_title and self.site_name == 'factcheckghana':
+            self.url = f'https://www.fact-checkghana.com/{slugify(self.page_title)}'
+
         if not self.page_title or not self.url:
             raise Exception(f'page title or url required')
-    
-        
-
-        # f'https://africacheck.org/fact-checks/reports/{self.page_title}'
-        # f'https://www.thecable.ng/{self.page_title}'
-        # f'https://www.thecable.ng/{self.page_title}'
-        # f'https://www.fact-checkghana.com/{self.page_title}'
-
 
     def get_driver(self):
         if self.driver is None:
@@ -71,7 +71,7 @@ class Scraper:
                     break
                 current_height = iter_height
         return
-    
+
     def get(self):
         driver = self.get_driver()
         driver.get(self.url)
@@ -80,47 +80,28 @@ class Scraper:
         else:
             time.sleep(10)
         return driver.page_source
-    
+
     def get_html_obj(self):
         if self.html_obj is None:
             html_str = self.get()
             self.html_obj = HTML(html=html_str)
         return self.html_obj
-    
-    # def extract_element_title(self):
-    #     el = ''
-    #     html_obj = self.get_html_obj()
-    #     if self.site_name == 'dubawa':
-    #         element_class = '.post-title'
-    #         el = html_obj.find(element_class, first=True)
-    #     if self.site_name == 'africacheck':
-    #         element_class = '.page-title'
-    #         el = html_obj.find(element_class, first=True)
-    #     if self.site_name == 'cableng':
-    #         element_class = '.article-title'
-    #         el = html_obj.find(element_class, first=True)
-    #     if self.site_name == 'factcheckghana':
-    #         element_class = '.tdb-title-text'
-    #         el = html_obj.find(element_class, first=True)
-    #     if self.site_name == '':
-    #         return el
-    #     return slugify(el.text)
-    
+
     def extract_element_text(self, element_id):
         html_obj = self.get_html_obj()
         el = html_obj.find(element_id, first=True)
         if not el:
             return ''
         return el.text
-        
+
     def extract_element_src(self, element_id):
         html_obj = self.get_html_obj()
         el = html_obj.find(element_id, first=True)
         if not el:
             return ''
         return el.attrs['src']
-        
-    def extract_claim(self, element_id):
+
+    def dubawa_extract_claim(self, element_id):
         """
         returns a list of claims
         """
@@ -130,10 +111,10 @@ class Scraper:
         for claim in el:
             claim_list.append(claim.text)
         return claim_list
-    
-    def extract_verdicts(self) -> dict:
+
+    def dubawa_extract_verdicts(self) -> dict:
         html_obj = self.get_html_obj()
-        verdict_dataset= {}
+        verdict_dataset = {}
         verdict_list = []
         verdict_tag = []
         verdicts_key = html_obj.find('.has-background')
@@ -149,17 +130,21 @@ class Scraper:
             verdict_tag.append(verdict)
         verdict_tag = list(set(verdict_tag))
         for i, key in enumerate(verdict_list):
-            verdict_dataset[key] = verdict_tag[i]
+            try:
+                verdict_dataset[key] = verdict_tag[i]
+            except:
+                pass
         return verdict_dataset
-    
-    def scrape(self):
+
+    def dubawa_scrape(self):
         html_obj = self.get_html_obj()
-        title = self.extract_element_text( '.post-title')
+        title = self.extract_element_text('.post-title')
         author = self.extract_element_text('.author-name')
         page_date = self.extract_element_text('.date')
         page_banner = self.extract_element_src('.wp-post-image')
-        claim = self.extract_claim('.has-cyan-bluish-gray-background-color')
-        verdicts = self.extract_verdicts()
+        claim = self.dubawa_extract_claim(
+            '.has-cyan-bluish-gray-background-color')
+        verdicts = self.dubawa_extract_verdicts()
         return {
             'title': title,
             'author': author,
@@ -168,4 +153,43 @@ class Scraper:
             'claim': claim,
             'verdicts': verdicts
         }
-    
+
+    def factcheckghana_extract_claim(self, element_id):
+        """
+        returns a list of claims
+        """
+        html_obj = self.get_html_obj()
+        claim_list = []
+        claim = self.extract_element_text(html_obj, element_id)
+        claim_list.append(claim)
+        return claim_list
+
+    def factcheckghana_extract_verdicts(self) -> dict:
+        verdicts_dict = {}
+        html_obj = self.get_html_obj()
+        g_verdict = html_obj.find('.tdb-title-text', first=True).text
+        for word in slugify(g_verdict.lower()).split('-'):
+            if word == 'factbox' or word == 'fact' or word == 'facts':
+                verdicts_dict['fact'] = 'True'
+            elif word == 'false' or word == 'not':
+                verdicts_dict['false'] = 'False'
+            elif word == 'misleading':
+                verdicts_dict['misleading'] = 'Misleading'
+        return verdicts_dict
+
+    def factcheckghana_scrape(self):
+        html_obj = self.get_html_obj()
+        title = self.extract_element_text('.tdb-title-text')
+        author = self.extract_element_text('.tdb-author-name')
+        page_date = self.extract_element_text('.entry-date')
+        page_banner = self.extract_element_src('.entry-thumb')
+        claim = self.factcheckghana_extract_claim('.tdb-block-inner p strong')
+        verdicts = self.factcheckghana_extract_verdicts()
+        return {
+            'title': title,
+            'author': author,
+            'page_date': page_date,
+            'page_banner': page_banner,
+            'claim': claim,
+            'verdicts': verdicts
+        }
