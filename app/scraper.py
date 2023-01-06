@@ -27,32 +27,21 @@ class Scraper:
     driver: WebDriver = None
     html_obj: HTML = None
     
+    
+    def __post_init__(self):
+        if self.page_title and self.site_name == 'dubawa':
+            self.url = f'https://dubawa.org/{slugify(self.page_title)}'
+            
+        if not self.page_title or not self.url:
+            raise Exception(f'page title or url required')
+    
         
 
-    # def __init__(self):
-    #     if self.page_title:
-    #         self.page_title = slugify(page_title)
-    #         self.url = f'https://dubawa.org/{self.page_title}'
-    #         print(self.url)
+        # f'https://africacheck.org/fact-checks/reports/{self.page_title}'
+        # f'https://www.thecable.ng/{self.page_title}'
+        # f'https://www.thecable.ng/{self.page_title}'
+        # f'https://www.fact-checkghana.com/{self.page_title}'
 
-        # elif self.site_name == 'africacheck':
-        #     self.page_title = self.extract_element_title()
-        #     self.url = f'https://africacheck.org/fact-checks/reports/{self.page_title}'
-
-        # elif self.site_name == 'cableng':
-        #     self.page_title = self.extract_element_title()
-        #     self.url = f'https://www.thecable.ng/{self.page_title}'
-
-        # # if self.site_name == 'afpfactcheck':
-        # #     self.page_title = self.extract_element_title()
-        # #     self.url = f'https://www.thecable.ng/{self.page_title}'
-
-        # elif self.site_name == 'factcheckghana':
-        #     self.page_title = self.extract_element_title()
-        #     self.url = f'https://www.fact-checkghana.com/{self.page_title}'
-
-        # if not self.page_title or not self.url:
-        #     raise Exception('Site name or url required')
 
     def get_driver(self):
         if self.driver is None:
@@ -147,7 +136,7 @@ class Scraper:
         verdict_dataset= {}
         verdict_list = []
         verdict_tag = []
-        verdicts_key = html_obj.find('.has-text-color strong')
+        verdicts_key = html_obj.find('.has-background')
         verdicts_value = html_obj.find('.alignright img')
 
         for i, v_strong in enumerate(verdicts_key):
@@ -177,6 +166,6 @@ class Scraper:
             'page_date': page_date,
             'page_banner': page_banner,
             'claim': claim,
-            **verdicts
+            'verdicts': verdicts
         }
     
