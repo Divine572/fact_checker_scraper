@@ -193,3 +193,73 @@ class Scraper:
             'claim': claim,
             'verdicts': verdicts
         }
+        
+    def thecable_extract_claim(self, element_id):
+        """
+        returns a list of claims
+        """
+        html_obj = self.get_html_obj()
+        claim_list = []
+        claim = self.extract_element_text(html_obj, element_id)
+        claim_list.append(claim)
+        return claim_list
+    
+    def thecable_extract_verdicts(self):
+        html_obj = self.get_html_obj()
+        c_verdict = {}
+        c_claim = html_obj.find('.post-content p strong', first=True).text
+        c_verdict[c_claim] = 'True'
+        return c_verdict
+        
+
+            
+    def thecable_scrape(self):
+        html_obj = self.get_html_obj()
+        title = self.extract_element_text('.post-title')
+        author = self.extract_element_text('.post-comment')
+        page_date = self.extract_element_text('.post-date')
+        page_banner = self.extract_element_src('.post-image img')
+        claim = self.thecable_extract_claim('.tdb-block-inner p strong')
+        verdicts = self.thecable_extract_verdicts()
+        return {
+            'title': title,
+            'author': author,
+            'page_date': page_date,
+            'page_banner': page_banner,
+            'claim': claim,
+            'verdicts': verdicts
+        }
+        
+    def africacheck_scrape(self):
+        html_obj = self.get_html_obj()
+        title = self.extract_element_text('.post-title')
+        author = self.extract_element_text('.post-comment')
+        page_date = self.extract_element_text('.post-date')
+        page_banner = self.extract_element_src('.post-image img')
+        claim = self.thecable_extract_claim('.tdb-block-inner p strong')
+        verdicts = self.thecable_extract_verdicts()
+        return {
+            'title': title,
+            'author': author,
+            'page_date': page_date,
+            'page_banner': page_banner,
+            'claim': claim,
+            'verdicts': verdicts
+        }
+
+    def scrape(self):
+        dataset = {}
+        if self.site_name == 'dubawa':
+            datset = self.dubawa_scrape()
+            return dataset
+        elif self.site_name == 'factcheckghana':
+           dataset = self.factcheckghana_scrape()
+           return dataset
+        elif self.site_name == 'thecable':
+           dataset = self.thecable_scrape()
+           return dataset
+        elif self.site_name == 'africacheck':
+            dataset = self.africacheck_scrape()
+            return dataset
+       
+    
